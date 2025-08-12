@@ -1,12 +1,49 @@
 import QtQuick 2.12
 import QtQuick.Controls 2.12
 import QtQuick.Layouts 1.12
+import QtQuick.Dialogs 1.3
 
 ApplicationWindow {
     visible: true
     width: 800
     height: 600
     title: "Editable CSV Table"
+
+    // Диалоговые окна
+    FileDialog {
+        id: openFileDialog
+        title: "Выберите CSV файл"
+        folder: shortcuts.documents
+        nameFilters: ["CSV files (*.csv)", "All files (*)"]
+        onAccepted: {
+            currentFilePath = openFileDialog.fileUrl.toString().replace("file:///", "")
+            tableModel.loadCSV(currentFilePath)
+        }
+    }
+
+    FileDialog {
+        id: saveFileDialog
+        title: "Сохранить CSV файл"
+        folder: shortcuts.documents
+        nameFilters: ["CSV files (*.csv)"]
+        selectExisting: false
+        onAccepted: {
+            var newPath = saveFileDialog.fileUrl.toString().replace("file:///", "")
+            if (tableModel.saveCSV(newPath)) {
+                currentFilePath = newPath
+                showMessage("Файл сохранен: " + newPath)
+            } else {
+                showMessage("Ошибка сохранения!")
+            }
+        }
+    }
+
+    // Функция для показа сообщений
+    function showMessage(text) {
+        messageLabel.text = text
+        messageLabel.visible = true
+        messageTimer.start()
+    }
 
     // Панель управления
     Rectangle {
@@ -20,38 +57,70 @@ ApplicationWindow {
         RowLayout {
             anchors.fill: parent
             anchors.margins: 10
+            spacing: 10
 
-            Button {
-                text: "Загрузить CSV"
-                onClicked: tableModel.loadCSV(csvPath)
-            }
+            // Группа файловых операций
+            ColumnLayout {
+                RowLayout {
+                    Button {
+                        text: "Открыть..."
+                        onClicked: openFileDialog.open()
+                    }
 
-            Button {
-                            text: "Сохранить CSV"
-                            onClicked: {
-                                if (tableModel.saveCSV(csvPath)) {
-                                    saveMessage.text = "Файл сохранен!"
-                                } else {
-                                    saveMessage.text = "Ошибка сохранения!"
-                                }
-                                saveMessage.visible = true
-                                saveTimer.start()
+                    Button {
+                        text: "Сохранить"
+                        onClicked: {
+                            if (tableModel.saveCSV(currentFilePath)) {
+                                showMessage("Файл сохранен: " + currentFilePath)
+                            } else {
+                                showMessage("Ошибка сохранения!")
                             }
                         }
+                    }
 
-            Button {
-                text: "Очистить таблицу"
-                onClicked: tableModel.clear()
+                    Button {
+                        text: "Сохранить как..."
+                        onClicked: saveFileDialog.open()
+                    }
+                }
+
+                Text {
+                    text: "Текущий файл: " + currentFilePath
+                    font.pixelSize: 10
+                    elide: Text.ElideMiddle
+                    Layout.fillWidth: true
+                }
             }
 
-            Text {
-                text: "Редактируемые столбцы: " + tableModel.editableColumns
+            // Группа действий с данными
+            ColumnLayout {
+                Button {
+                    text: "Загрузить данные"
+                    onClicked: tableModel.loadCSV(currentFilePath)
+                }
+
+                Button {
+                    text: "Очистить таблицу"
+                    onClicked: tableModel.clear()
+                }
+            }
+
+            // Информация
+            ColumnLayout {
+                Text {
+                    text: "Редактируемые столбцы: " + tableModel.editableColumns
+                }
+
+                Text {
+                    text: "Строк: " + tableModel.rowCount
+                }
             }
         }
     }
-    // Сообщение о сохранении
+
+    // Сообщение
     Label {
-        id: saveMessage
+        id: messageLabel
         anchors.centerIn: parent
         visible: false
         font.bold: true
@@ -59,18 +128,17 @@ ApplicationWindow {
         z: 10
         background: Rectangle {
             color: "#e0e0e0"
-            radius: 5
+            radius: 10
+            opacity: 0.9
         }
-        padding: 10
+        padding: 15
     }
 
-    // Таймер для скрытия сообщения
     Timer {
-        id: saveTimer
-        interval: 2000
-        onTriggered: saveMessage.visible = false
+        id: messageTimer
+        interval: 3000
+        onTriggered: messageLabel.visible = false
     }
-
 
     // Главная таблица
     ListView {
@@ -90,7 +158,6 @@ ApplicationWindow {
             id: rowDelegate
             width: rowView.width
             height: 25
-
 
             // Сохраняем индекс строки
             property int rowIndex: index
@@ -127,66 +194,60 @@ ApplicationWindow {
                         // Проверяем, можно ли редактировать эту ячейку
                         property bool editable: tableModel.isCellEditable(actualRowIndex, columnIndex)
 
-                        // Режим редактирования
-                        property bool isEditing: false
-
-                        // Текст или поле ввода
-                        Loader {
-                            anchors.fill: parent
-                            sourceComponent: {
-                                if (cellDelegate.isEditing)
-                                    return editComponent
-                                else
-                                    return displayComponent
+                        // Отображение текста
+                        Text {
+                            id: textDisplay
+                            anchors {
+                                verticalCenter: parent.verticalCenter
+                                left: parent.left
+                                leftMargin: 10
+                                right: parent.right
                             }
+                            text: modelData
+                            font.pixelSize: 12
+                            elide: Text.ElideRight
+                            visible: true
                         }
 
-                        // Компонент для отображения текста
-                        Component {
-                            id: displayComponent
-                            Text {
-                                anchors {
-                                    verticalCenter: parent.verticalCenter
-                                    left: parent.left
-                                    leftMargin: 10
-                                    right: parent.right
-                                }
-                                text: modelData
-                                font.pixelSize: 12
-                                elide: Text.ElideRight
-
-                                MouseArea {
-                                    anchors.fill: parent
-                                    enabled: cellDelegate.editable
-                                    onDoubleClicked: {
-                                        cellDelegate.isEditing = true
-                                    }
-                                }
+                        // Поле ввода
+                        TextInput {
+                            id: textInput
+                            anchors {
+                                verticalCenter: parent.verticalCenter
+                                left: parent.left
+                                leftMargin: 10
+                                right: parent.right
                             }
-                        }
+                            text: modelData
+                            font.pixelSize: 12
+                            visible: false
+                            clip: true
+                            selectByMouse: true
 
-                        // Компонент для редактирования
-                        Component {
-                            id: editComponent
-                            TextField {
-                                anchors.fill: parent
-                                text: modelData
-                                font.pixelSize: 12
-                                leftPadding: 10
+                            onEditingFinished: {
+                                tableModel.updateCell(actualRowIndex, columnIndex, text)
+                                visible = false
+                                textDisplay.visible = true
+                            }
 
-                                Component.onCompleted: forceActiveFocus()
-
-                                onEditingFinished: {
-                                    // Сохраняем изменения с правильными индексами
+                            onActiveFocusChanged: {
+                                if (!activeFocus) {
                                     tableModel.updateCell(actualRowIndex, columnIndex, text)
-                                    cellDelegate.isEditing = false
+                                    visible = false
+                                    textDisplay.visible = true
                                 }
+                            }
+                        }
 
-                                onActiveFocusChanged: {
-                                    if (!activeFocus) {
-                                        cellDelegate.isEditing = false
-                                    }
-                                }
+                        MouseArea {
+                            anchors.fill: parent
+                            enabled: cellDelegate.editable
+                            onDoubleClicked: {
+                                textInput.text = textDisplay.text
+                                textInput.visible = true
+                                textDisplay.visible = false
+                                textInput.forceActiveFocus()
+                                textInput.selectAll()
                             }
                         }
 

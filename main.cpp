@@ -1,8 +1,9 @@
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
-#include <QStandardPaths>
 #include <QDir>
+#include <QDebug>
+#include <QIcon>
 #include "tablemodel.h"
 
 // Создаем тестовый CSV файл
@@ -33,11 +34,22 @@ void createTestCSV(const QString &filePath) {
 int main(int argc, char *argv[]) {
     QGuiApplication app(argc, argv);
 
-    // Указываем конкретный путь к папке
+    // Устанавливаем идентификаторы организации (это важно для работы QSettings)
+   /* Почему это важно:
+
+        QSettings использует эти идентификаторы для хранения настроек приложения
+
+        FileDialog использует QSettings для запоминания последней открытой папки
+
+        Без этих установок QSettings не может сохранять/загружать настройки*/
+    app.setOrganizationName("MyCompany");
+    app.setOrganizationDomain("mycompany.com");
+    app.setApplicationName("CSVTableEditor");
+
+    // Путь для CSV файла
     QString projectDir = "D:/0_KNX/QML_TableList/TableList";
     QDir().mkpath(projectDir);
 
-    // Путь для CSV файла
     QString csvPath = projectDir + "/employees.csv";
 
     // Создаем тестовый файл если его нет
@@ -48,15 +60,12 @@ int main(int argc, char *argv[]) {
     // Создаем модель
     TableModel model;
 
-    // Загружаем данные из файла
-    model.loadCSV(csvPath);
-
     // Устанавливаем редактируемые столбцы
     model.setEditableColumns({1, 3});
 
     QQmlApplicationEngine engine;
     engine.rootContext()->setContextProperty("tableModel", &model);
-    engine.rootContext()->setContextProperty("csvPath", csvPath);
+    engine.rootContext()->setContextProperty("currentFilePath", csvPath);
     engine.load(QUrl(QStringLiteral("qrc:/main.qml")));
 
     if (engine.rootObjects().isEmpty()) {
