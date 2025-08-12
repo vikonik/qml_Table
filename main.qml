@@ -27,6 +27,19 @@ ApplicationWindow {
             }
 
             Button {
+                            text: "Сохранить CSV"
+                            onClicked: {
+                                if (tableModel.saveCSV(csvPath)) {
+                                    saveMessage.text = "Файл сохранен!"
+                                } else {
+                                    saveMessage.text = "Ошибка сохранения!"
+                                }
+                                saveMessage.visible = true
+                                saveTimer.start()
+                            }
+                        }
+
+            Button {
                 text: "Очистить таблицу"
                 onClicked: tableModel.clear()
             }
@@ -36,6 +49,28 @@ ApplicationWindow {
             }
         }
     }
+    // Сообщение о сохранении
+    Label {
+        id: saveMessage
+        anchors.centerIn: parent
+        visible: false
+        font.bold: true
+        font.pixelSize: 18
+        z: 10
+        background: Rectangle {
+            color: "#e0e0e0"
+            radius: 5
+        }
+        padding: 10
+    }
+
+    // Таймер для скрытия сообщения
+    Timer {
+        id: saveTimer
+        interval: 2000
+        onTriggered: saveMessage.visible = false
+    }
+
 
     // Главная таблица
     ListView {
@@ -54,7 +89,8 @@ ApplicationWindow {
         delegate: Rectangle {
             id: rowDelegate
             width: rowView.width
-            height: 40
+            height: 25
+
 
             // Сохраняем индекс строки
             property int rowIndex: index

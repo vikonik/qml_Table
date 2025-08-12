@@ -1,4 +1,8 @@
 #include "tablemodel.h"
+#include <QFile>
+#include <QTextStream>
+#include <QDebug>
+
 
 TableModel::TableModel(QObject *parent) : QAbstractListModel(parent) {}
 
@@ -142,4 +146,34 @@ void TableModel::updateCell(int row, int column, const QVariant &value) {
     // Уведомляем об изменении конкретной строки
     QModelIndex modelIndex = createIndex(row, 0);
     emit dataChanged(modelIndex, modelIndex, {RowDataRole});
+}
+
+bool TableModel::saveCSV(const QString &filePath) {
+    QFile file(filePath);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        qWarning() << "Cannot open file for writing:" << filePath;
+        return false;
+    }
+
+    QTextStream out(&file);
+
+    for (const QList<QVariant> &row : m_data) {
+        QStringList fields;
+        for (const QVariant &field : row) {
+            QString text = field.toString();
+
+            // Экранируем поля, содержащие запятые или кавычки
+            if (text.contains(',') || text.contains('"') || text.contains('\n')) {
+                text.replace('"', "\"\""); // Двойные кавычки
+                fields.append('"' + text + '"');
+            } else {
+                fields.append(text);
+            }
+        }
+        out << fields.join(',') << '\n';
+    }
+
+    file.close();
+    qDebug() << "Saved" << m_data.size() << "rows to" << filePath;
+    return true;
 }

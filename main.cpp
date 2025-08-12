@@ -3,7 +3,7 @@
 #include <QQmlContext>
 #include <QStandardPaths>
 #include <QDir>
-#include "TableModel.h"
+#include "tablemodel.h"
 
 // Создаем тестовый CSV файл
 void createTestCSV(const QString &filePath) {
@@ -33,10 +33,12 @@ void createTestCSV(const QString &filePath) {
 int main(int argc, char *argv[]) {
     QGuiApplication app(argc, argv);
 
+    // Указываем конкретный путь к папке
+    QString projectDir = "D:/0_KNX/QML_TableList/TableList";
+    QDir().mkpath(projectDir);
+
     // Путь для CSV файла
-    QString csvPath = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
-    QDir().mkpath(csvPath);
-    csvPath += "/employees.csv";
+    QString csvPath = projectDir + "/employees.csv";
 
     // Создаем тестовый файл если его нет
     if (!QFile::exists(csvPath)) {
@@ -46,8 +48,11 @@ int main(int argc, char *argv[]) {
     // Создаем модель
     TableModel model;
 
-    // Устанавливаем редактируемые столбцы (например, 1 и 3)
-    model.setEditableColumns({1, 3}); // Name и Department
+    // Загружаем данные из файла
+    model.loadCSV(csvPath);
+
+    // Устанавливаем редактируемые столбцы
+    model.setEditableColumns({1, 3});
 
     QQmlApplicationEngine engine;
     engine.rootContext()->setContextProperty("tableModel", &model);

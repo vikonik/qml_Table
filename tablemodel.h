@@ -32,7 +32,8 @@ public:
 
     Q_INVOKABLE bool isCellEditable(int row, int column) const;
     Q_INVOKABLE void updateCell(int row, int column, const QVariant &value);
-
+    // Добавляем метод сохранения
+    Q_INVOKABLE bool saveCSV(const QString &filePath);
     // Переименованный метод, чтобы избежать конфликта
     void setModelData(const QList<QList<QVariant>> &newData);
 
