@@ -12,6 +12,15 @@ int main(int argc, char *argv[]) {
     model.addRow({1, "John Doe", 30});
     model.addRow({2, "Jane Smith", 25});
     model.addRow({3, "Bob Johnson", 40});
+    model.addRow({1, "John Doe", 30});
+    model.addRow({2, "Jane Smith", 25});
+    model.addRow({3, "Bob Johnson", 40});
+    model.addRow({1, "John Doe", 30});
+    model.addRow({2, "Jane Smith", 25});
+    model.addRow({3, "Bob Johnson", 40});
+    model.addRow({1, "John Doe", 30});
+    model.addRow({2, "Jane Smith", 25});
+    model.addRow({3, "Bob Johnson", 40});
 
     QQmlApplicationEngine engine;
 

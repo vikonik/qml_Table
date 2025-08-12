@@ -13,27 +13,44 @@ ApplicationWindow {
         id: rowView
         anchors.fill: parent
         model: tableModel
-        spacing: 0 // Убрали промежуток между строками
+        spacing: 0
+
+        // Свойство для хранения индекса выделенной строки
+        property int selectedRow: -1
 
         delegate: Rectangle {
+            id: rowDelegate
             width: rowView.width
             height: 40
-            color: index % 2 === 0 ? "#f0f0f0" : "#ffffff"
-            border.color: "#e0e0e0" // Только нижняя граница для строки
-            border.width: 0  // Полностью убрали границу
+
+            // Цвет фона: выделенная строка или чередование
+            color: {
+                if (rowView.selectedRow === index)
+                    return "#c0d8f0" // цвет выделения
+                else
+                    return index % 2 === 0 ? "#f0f0f0" : "#ffffff"
+            }
+
+            // Обработка щелчка мыши для выделения
+            MouseArea {
+                anchors.fill: parent
+                onClicked: {
+                    rowView.selectedRow = index
+                }
+            }
 
             // Вложенный список (ячейки)
             Row {
                 anchors.fill: parent
-                spacing: 0 // Убрали промежуток между ячейками
+                spacing: 0
 
                 Repeater {
                     model: rowData
 
                     delegate: Rectangle {
-                        width: rowView.width / rowData.length // Равномерное распределение
+                        width: rowView.width / rowData.length
                         height: parent.height
-                        color: "transparent" // Прозрачный фон
+                        color: "transparent"
 
                         Text {
                             anchors.centerIn: parent
@@ -61,5 +78,16 @@ ApplicationWindow {
                 color: "#e0e0e0"
             }
         }
+    }
+
+    // Кнопка для сброса выделения (опционально)
+    Button {
+        anchors {
+            bottom: parent.bottom
+            right: parent.right
+            margins: 10
+        }
+        text: "Сбросить выделение"
+        onClicked: rowView.selectedRow = -1
     }
 }
