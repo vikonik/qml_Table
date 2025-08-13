@@ -157,41 +157,45 @@ ApplicationWindow {
         delegate: Rectangle {
             id: rowDelegate
             width: rowView.width
-            height: 25
+            height: 30 // Увеличиваем высоту строки
 
             // Сохраняем индекс строки
             property int rowIndex: index
+            property bool isSelected: rowView.selectedRow === rowIndex
 
-            color: {
-                if (rowView.selectedRow === rowIndex)
-                    return "#c0d8f0"
-                else
-                    return rowIndex % 2 === 0 ? "#f0f0f0" : "#ffffff"
-            }
-
-            MouseArea {
-                anchors.fill: parent
-                onClicked: rowView.selectedRow = rowIndex
-            }
+            color: isSelected ? "#c0d8f0" : (rowIndex % 2 === 0 ? "#f0f0f0" : "#ffffff")
 
             Row {
                 anchors.fill: parent
-                spacing: 0
+                spacing: 5
 
+                // Иконка в начале строки
+                Rectangle {
+                    width: 25
+                    height: parent.height
+                    color: "transparent"
+
+                    Image {
+                        width: 20
+                        height: 20
+                        anchors.centerIn: parent
+                        source: rowDelegate.isSelected ? "qrc:Pic1.png"
+                                                      : "qrc:Pic2.png"
+                    }
+                }
+
+                // Ячейки таблицы
                 Repeater {
                     model: rowData
 
-                    delegate: Rectangle  {
+                    delegate: Rectangle {
                         id: cellDelegate
-                        width: rowView.width / rowData.length
+                        width: (rowView.width - 30) / rowData.length // Учитываем ширину иконки
                         height: parent.height
                         color: "transparent"
 
-                        // Используем сохраненные индексы
                         property int columnIndex: model.index
                         property int actualRowIndex: rowDelegate.rowIndex
-
-                        // Проверяем, можно ли редактировать эту ячейку
                         property bool editable: tableModel.isCellEditable(actualRowIndex, columnIndex)
 
                         // Отображение текста
@@ -200,7 +204,7 @@ ApplicationWindow {
                             anchors {
                                 verticalCenter: parent.verticalCenter
                                 left: parent.left
-                                leftMargin: 10
+                                leftMargin: 5
                                 right: parent.right
                             }
                             text: modelData
@@ -215,7 +219,7 @@ ApplicationWindow {
                             anchors {
                                 verticalCenter: parent.verticalCenter
                                 left: parent.left
-                                leftMargin: 10
+                                leftMargin: 5
                                 right: parent.right
                             }
                             text: modelData
@@ -261,6 +265,11 @@ ApplicationWindow {
                         }
                     }
                 }
+            }
+
+            MouseArea {
+                anchors.fill: parent
+                onClicked: rowView.selectedRow = rowIndex
             }
 
             // Нижняя граница для строки

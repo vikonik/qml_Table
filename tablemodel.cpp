@@ -177,3 +177,12 @@ bool TableModel::saveCSV(const QString &filePath) {
     qDebug() << "Saved" << m_data.size() << "rows to" << filePath;
     return true;
 }
+
+// TableModel.cpp
+QString TableModel::getRowIcon(int row, bool isSelected) const {
+    if (isSelected) return "qrc:/icons/row_selected.png";
+
+    // Дополнительная логика для разных типов строк
+    if (row == 0) return "qrc:/icons/header_icon.png";
+    return "qrc:/icons/row_default.png";
+}

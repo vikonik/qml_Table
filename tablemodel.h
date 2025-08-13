@@ -37,6 +37,7 @@ public:
     // Переименованный метод, чтобы избежать конфликта
     void setModelData(const QList<QList<QVariant>> &newData);
 
+    Q_INVOKABLE QString getRowIcon(int row, bool isSelected) const;
 signals:
     void editableColumnsChanged();
 
