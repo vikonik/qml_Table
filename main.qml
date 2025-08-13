@@ -157,40 +157,49 @@ ApplicationWindow {
         delegate: Rectangle {
             id: rowDelegate
             width: rowView.width
-            height: 30 // Увеличиваем высоту строки
+            height: 30
 
-            // Сохраняем индекс строки
             property int rowIndex: index
             property bool isSelected: rowView.selectedRow === rowIndex
 
             color: isSelected ? "#c0d8f0" : (rowIndex % 2 === 0 ? "#f0f0f0" : "#ffffff")
 
-            Row {
-                anchors.fill: parent
-                spacing: 5
+            // Иконка в начале строки
+            Rectangle {
+                width: 30
+                height: parent.height
+                color: "transparent"
 
-                // Иконка в начале строки
-                Rectangle {
-                    width: 25
-                    height: parent.height
-                    color: "transparent"
-
-                    Image {
-                        width: 20
-                        height: 20
-                        anchors.centerIn: parent
-                        source: rowDelegate.isSelected ? "qrc:Pic1.png"
-                                                      : "qrc:Pic2.png"
-                    }
+                Image {
+                    width: 20
+                    height: 20
+                    anchors.centerIn: parent
+                    source: rowDelegate.isSelected ? "qrc:Pic1.png"
+                                                : "qrc:Pic2.png"
                 }
 
-                // Ячейки таблицы
+                MouseArea {
+                    anchors.fill: parent
+                    onClicked: rowView.selectedRow = rowIndex
+                }
+            }
+
+            // Ячейки таблицы
+            Row {
+                anchors {
+                    left: parent.left
+                    leftMargin: 30  // Отступ для иконки
+                    right: parent.right
+                }
+                height: parent.height
+                spacing: 0
+
                 Repeater {
                     model: rowData
 
                     delegate: Rectangle {
                         id: cellDelegate
-                        width: (rowView.width - 30) / rowData.length // Учитываем ширину иконки
+                        width: (rowView.width - 30) / rowData.length
                         height: parent.height
                         color: "transparent"
 
@@ -198,19 +207,34 @@ ApplicationWindow {
                         property int actualRowIndex: rowDelegate.rowIndex
                         property bool editable: tableModel.isCellEditable(actualRowIndex, columnIndex)
 
+                        // Область для выбора строки
+                        MouseArea {
+                            anchors.fill: parent
+                            acceptedButtons: Qt.LeftButton
+                            onClicked: {
+                                if (!textInput.visible) {
+                                    rowView.selectedRow = rowIndex
+                                }
+                            }
+                            onDoubleClicked: {
+                                if (cellDelegate.editable && !textInput.visible) {
+                                    startEditing()
+                                }
+                            }
+                        }
+
                         // Отображение текста
                         Text {
                             id: textDisplay
                             anchors {
                                 verticalCenter: parent.verticalCenter
                                 left: parent.left
-                                leftMargin: 5
+                                leftMargin: 10
                                 right: parent.right
                             }
                             text: modelData
                             font.pixelSize: 12
                             elide: Text.ElideRight
-                            visible: true
                         }
 
                         // Поле ввода
@@ -219,7 +243,7 @@ ApplicationWindow {
                             anchors {
                                 verticalCenter: parent.verticalCenter
                                 left: parent.left
-                                leftMargin: 5
+                                leftMargin: 10
                                 right: parent.right
                             }
                             text: modelData
@@ -228,31 +252,8 @@ ApplicationWindow {
                             clip: true
                             selectByMouse: true
 
-                            onEditingFinished: {
-                                tableModel.updateCell(actualRowIndex, columnIndex, text)
-                                visible = false
-                                textDisplay.visible = true
-                            }
-
-                            onActiveFocusChanged: {
-                                if (!activeFocus) {
-                                    tableModel.updateCell(actualRowIndex, columnIndex, text)
-                                    visible = false
-                                    textDisplay.visible = true
-                                }
-                            }
-                        }
-
-                        MouseArea {
-                            anchors.fill: parent
-                            enabled: cellDelegate.editable
-                            onDoubleClicked: {
-                                textInput.text = textDisplay.text
-                                textInput.visible = true
-                                textDisplay.visible = false
-                                textInput.forceActiveFocus()
-                                textInput.selectAll()
-                            }
+                            onEditingFinished: finishEditing()
+                            onActiveFocusChanged: if (!activeFocus) finishEditing()
                         }
 
                         // Правая граница для ячейки
@@ -263,13 +264,25 @@ ApplicationWindow {
                             color: "#e0e0e0"
                             visible: columnIndex < rowData.length - 1
                         }
+
+                        function startEditing() {
+                            textInput.text = textDisplay.text
+                            textInput.visible = true
+                            textDisplay.visible = false
+                            textInput.forceActiveFocus()
+                            textInput.selectAll()
+                        }
+
+                        function finishEditing() {
+                            if (textInput.visible) {
+                                tableModel.updateCell(actualRowIndex, columnIndex, textInput.text)
+                                textDisplay.text = textInput.text
+                                textInput.visible = false
+                                textDisplay.visible = true
+                            }
+                        }
                     }
                 }
-            }
-
-            MouseArea {
-                anchors.fill: parent
-                onClicked: rowView.selectedRow = rowIndex
             }
 
             // Нижняя граница для строки
@@ -280,7 +293,6 @@ ApplicationWindow {
                 color: "#e0e0e0"
             }
         }
-
         ScrollBar.vertical: ScrollBar {
             policy: ScrollBar.AlwaysOn
             width: 10
