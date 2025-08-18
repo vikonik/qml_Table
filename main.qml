@@ -141,6 +141,10 @@ ApplicationWindow {
     }
 
     // Главная таблица
+
+    // ... (предыдущий код без изменений)
+
+    // Главная таблица
     ListView {
         id: rowView
         anchors {
@@ -188,7 +192,7 @@ ApplicationWindow {
             Row {
                 anchors {
                     left: parent.left
-                    leftMargin: 30  // Отступ для иконки
+                    leftMargin: 30
                     right: parent.right
                 }
                 height: parent.height
@@ -217,13 +221,58 @@ ApplicationWindow {
                                 }
                             }
                             onDoubleClicked: {
-                                if (cellDelegate.editable && !textInput.visible) {
+                                if (cellDelegate.editable && !textInput.visible && columnIndex !== 5) {
                                     startEditing()
                                 }
                             }
                         }
 
-                        // Отображение текста
+                        // Для 5-й колонки (индекс 4) - изображение и текст
+                        Row {
+                            id: imageTextRow
+                            anchors {
+                                verticalCenter: parent.verticalCenter
+                                left: parent.left
+                                leftMargin: 10
+                                right: parent.right
+                            }
+                            spacing: 10
+                            visible: columnIndex === 4 && !textInput.visible
+
+                            Image {
+                                id: cellIcon
+                                width: 16
+                                height: 16
+                                source: {
+                                    var value = parseFloat(modelData);
+                                    if (value > 50000) return "qrc:Pic1.png";
+                                    if (value > 40000) return "qrc:Pic2.png";
+                                    return "qrc:Pic1.png";
+                                }
+                                anchors.verticalCenter: parent.verticalCenter
+                            }
+
+                            Text {
+                                text: modelData
+                                font.pixelSize: 12
+                                anchors.verticalCenter: parent.verticalCenter
+                                leftPadding: 8
+                            }
+                        }
+
+                        // Для 6-й колонки (индекс 5) - чекбокс
+                        CustomCheckBox {
+                            id: customCheckBox
+                            anchors.centerIn: parent
+                            visible: columnIndex === 5 && !textInput.visible
+                            checked: modelData === "1" || modelData === "true" // Поддержка разных форматов
+
+                            onToggled: {
+                                tableModel.updateCell(actualRowIndex, columnIndex, checked ? "1" : "0")
+                            }
+                        }
+
+                        // Обычный текст для других колонок
                         Text {
                             id: textDisplay
                             anchors {
@@ -235,6 +284,7 @@ ApplicationWindow {
                             text: modelData
                             font.pixelSize: 12
                             elide: Text.ElideRight
+                            visible: (columnIndex !== 4 && columnIndex !== 5) && !textInput.visible
                         }
 
                         // Поле ввода
@@ -266,9 +316,8 @@ ApplicationWindow {
                         }
 
                         function startEditing() {
-                            textInput.text = textDisplay.text
+                            textInput.text = modelData
                             textInput.visible = true
-                            textDisplay.visible = false
                             textInput.forceActiveFocus()
                             textInput.selectAll()
                         }
@@ -276,9 +325,7 @@ ApplicationWindow {
                         function finishEditing() {
                             if (textInput.visible) {
                                 tableModel.updateCell(actualRowIndex, columnIndex, textInput.text)
-                                textDisplay.text = textInput.text
                                 textInput.visible = false
-                                textDisplay.visible = true
                             }
                         }
                     }
@@ -298,4 +345,5 @@ ApplicationWindow {
             width: 10
         }
     }
+
 }

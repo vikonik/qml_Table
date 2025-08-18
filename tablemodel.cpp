@@ -120,7 +120,7 @@ bool TableModel::isCellEditable(int row, int column) const {
     // Первая строка (заголовки) не редактируется
     if (row == 0) return false;
 
-    return m_editableColumns.contains(column) &&
+    return (m_editableColumns.contains(column) || column == 5) &&
            row >= 0 && row < m_data.size() &&
            column >= 0 && column < m_data[row].size();
 }
@@ -141,7 +141,13 @@ void TableModel::updateCell(int row, int column, const QVariant &value) {
     }
 
     // Обновляем значение
-    m_data[row][column] = value;
+
+    // Для 6-й колонки преобразуем значение в "1" или "0"
+    if (column == 5) {
+        m_data[row][column] = value.toBool() ? "1" : "0";
+    } else {
+        m_data[row][column] = value;
+    }
 
     // Уведомляем об изменении конкретной строки
     QModelIndex modelIndex = createIndex(row, 0);

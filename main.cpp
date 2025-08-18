@@ -19,12 +19,13 @@ void createTestCSV(const QString &filePath) {
 
     // Генерируем 30 тестовых строк
     for (int i = 1; i <= 30; ++i) {
-        out << QString("%1,Employee %2,%3,Department %4,%5\n")
+        out << QString("%1,Employee %2,%3,Department %4,%5, %6\n")
             .arg(i)
             .arg(i)
             .arg(20 + (i % 20))
             .arg(1 + (i % 5))
-            .arg(30000 + (i * 1000));
+            .arg(30000 + (i * 1000))
+            .arg(0)   ;
     }
 
     file.close();

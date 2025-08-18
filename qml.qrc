@@ -3,5 +3,8 @@
         <file>main.qml</file>
         <file>Pic1.png</file>
         <file>Pic2.png</file>
+        <file>CustomCheckBox.qml</file>
+        <file>checkBox/checkbox_checked.png</file>
+        <file>checkBox/checkbox_unchecked.png</file>
     </qresource>
 </RCC>
