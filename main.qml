@@ -140,210 +140,250 @@ ApplicationWindow {
         onTriggered: messageLabel.visible = false
     }
 
+
+/*
+ !!!! QT грабли!!!!
+Чтобы прокручивать таблицу по горизонтали пришлось положить
+Rectangle в Rectangle и крутить уде весь второй Rectangle
+*/
     // Главная таблица
+    Rectangle {
+        id: frame
+        clip: true
+        width: 500
+        height: 160
+        border.color: "black"
+        anchors.centerIn: parent
 
-    // ... (предыдущий код без изменений)
+        Rectangle{
+            id: content
+            height: frame.height
+            width: 600
+            x: -hbar.position * width
 
-    // Главная таблица
-    ListView {
-        id: rowView
-        anchors {
-            top: controlPanel.bottom
-            left: parent.left
-            right: parent.right
-            bottom: parent.bottom
-        }
-        model: tableModel
-        spacing: 0
-
-        property int selectedRow: -1
-
-        delegate: Rectangle {
-            id: rowDelegate
-            width: rowView.width
-            height: 30
-
-            property int rowIndex: index
-            property bool isSelected: rowView.selectedRow === rowIndex
-
-            color: isSelected ? "#c0d8f0" : (rowIndex % 2 === 0 ? "#f0f0f0" : "#ffffff")
-
-            // Иконка в начале строки
-            Rectangle {
-                width: 30
-                height: parent.height
-                color: "transparent"
-
-                Image {
-                    width: 20
-                    height: 20
-                    anchors.centerIn: parent
-                    source: rowDelegate.isSelected ? "qrc:Pic1.png"
-                                                : "qrc:Pic2.png"
-                }
-
-                MouseArea {
-                    anchors.fill: parent
-                    onClicked: rowView.selectedRow = rowIndex
-                }
-            }
-
-            // Ячейки таблицы
-            Row {
+            ListView {
+                id: rowView
                 anchors {
+                    // top: controlPanel.bottom
+                    top: parent.top
                     left: parent.left
-                    leftMargin: 30
                     right: parent.right
+                    bottom: parent.bottom
                 }
-                height: parent.height
+
+                //width: 600
+                model: tableModel
                 spacing: 0
 
-                Repeater {
-                    model: rowData
+                property int selectedRow: -1
 
-                    delegate: Rectangle {
-                        id: cellDelegate
-                        width: (rowView.width - 30) / rowData.length
+                delegate: Rectangle {
+                    id: rowDelegate
+                    width: rowView.width
+                    height: 30
+
+                    property int rowIndex: index
+                    property bool isSelected: rowView.selectedRow === rowIndex
+
+                    color: isSelected ? "#c0d8f0" : (rowIndex % 2 === 0 ? "#f0f0f0" : "#ffffff")
+
+                    // Иконка в начале строки
+                    Rectangle {
+                        width: 30
                         height: parent.height
                         color: "transparent"
 
-                        property int columnIndex: model.index
-                        property int actualRowIndex: rowDelegate.rowIndex
-                        property bool editable: tableModel.isCellEditable(actualRowIndex, columnIndex)
+                        Image {
+                            width: 20
+                            height: 20
+                            anchors.centerIn: parent
+                            source: rowDelegate.isSelected ? "qrc:Pic1.png"
+                                                           : "qrc:Pic2.png"
+                        }
 
-                        // Область для выбора строки
                         MouseArea {
                             anchors.fill: parent
-                            acceptedButtons: Qt.LeftButton
-                            onClicked: {
-                                if (!textInput.visible) {
-                                    rowView.selectedRow = rowIndex
+                            onClicked: rowView.selectedRow = rowIndex
+                        }
+                    }
+
+                    // Ячейки таблицы
+                    Row {
+                        anchors {
+                            left: parent.left
+                            leftMargin: 30
+                            //right: parent.right
+                        }
+                        width: 200//вместо right
+                        height: parent.height
+                        spacing: 0
+
+                        Repeater {
+                            model: rowData
+
+                            delegate: Rectangle {
+                                id: cellDelegate
+                                width: 150//(rowView.width - 30) / rowData.length
+                                height: parent.height
+                                color: "transparent"
+
+                                property int columnIndex: model.index
+                                property int actualRowIndex: rowDelegate.rowIndex
+                                property bool editable: tableModel.isCellEditable(actualRowIndex, columnIndex)
+
+                                // Область для выбора строки
+                                MouseArea {
+                                    anchors.fill: parent
+                                    acceptedButtons: Qt.LeftButton
+                                    onClicked: {
+                                        if (!textInput.visible) {
+                                            rowView.selectedRow = rowIndex
+                                        }
+                                    }
+                                    onDoubleClicked: {
+                                        if (cellDelegate.editable && !textInput.visible && columnIndex !== 5) {
+                                            startEditing()
+                                        }
+                                    }
                                 }
-                            }
-                            onDoubleClicked: {
-                                if (cellDelegate.editable && !textInput.visible && columnIndex !== 5) {
-                                    startEditing()
+
+                                // Для 5-й колонки (индекс 4) - изображение и текст
+                                Row {
+                                    id: imageTextRow
+                                    anchors {
+                                        verticalCenter: parent.verticalCenter
+                                        left: parent.left
+                                        leftMargin: 10
+                                        right: parent.right
+                                    }
+
+                                    spacing: 10
+                                    visible: columnIndex === 4 && !textInput.visible
+
+                                    Image {
+                                        id: cellIcon
+                                        width: 16
+                                        height: 16
+                                        source: {
+                                            var value = parseFloat(modelData);
+                                            if (value > 50000) return "qrc:Pic1.png";
+                                            if (value > 40000) return "qrc:Pic2.png";
+                                            return "qrc:Pic1.png";
+                                        }
+                                        anchors.verticalCenter: parent.verticalCenter
+                                    }
+
+                                    Text {
+                                        text: modelData
+                                        font.pixelSize: 12
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        leftPadding: 8
+                                    }
                                 }
-                            }
-                        }
 
-                        // Для 5-й колонки (индекс 4) - изображение и текст
-                        Row {
-                            id: imageTextRow
-                            anchors {
-                                verticalCenter: parent.verticalCenter
-                                left: parent.left
-                                leftMargin: 10
-                                right: parent.right
-                            }
-                            spacing: 10
-                            visible: columnIndex === 4 && !textInput.visible
+                                // Для 6-й колонки (индекс 5) - чекбокс
+                                CustomCheckBox {
+                                    id: customCheckBox
+                                    anchors.centerIn: parent
+                                    visible: columnIndex === 5 && !textInput.visible
+                                    checked: modelData === "1" || modelData === "true" // Поддержка разных форматов
 
-                            Image {
-                                id: cellIcon
-                                width: 16
-                                height: 16
-                                source: {
-                                    var value = parseFloat(modelData);
-                                    if (value > 50000) return "qrc:Pic1.png";
-                                    if (value > 40000) return "qrc:Pic2.png";
-                                    return "qrc:Pic1.png";
+                                    onToggled: {
+                                        tableModel.updateCell(actualRowIndex, columnIndex, checked ? "1" : "0")
+                                    }
                                 }
-                                anchors.verticalCenter: parent.verticalCenter
-                            }
 
-                            Text {
-                                text: modelData
-                                font.pixelSize: 12
-                                anchors.verticalCenter: parent.verticalCenter
-                                leftPadding: 8
-                            }
-                        }
+                                // Обычный текст для других колонок
+                                Text {
+                                    id: textDisplay
+                                    anchors {
+                                        verticalCenter: parent.verticalCenter
+                                        left: parent.left
+                                        leftMargin: 10
+                                        //right: parent.right
+                                    }
+                                    width: 200
+                                    text: modelData
+                                    font.pixelSize: 12
+                                    elide: Text.ElideRight
+                                    visible: (columnIndex !== 4 && columnIndex !== 5) && !textInput.visible
+                                }
 
-                        // Для 6-й колонки (индекс 5) - чекбокс
-                        CustomCheckBox {
-                            id: customCheckBox
-                            anchors.centerIn: parent
-                            visible: columnIndex === 5 && !textInput.visible
-                            checked: modelData === "1" || modelData === "true" // Поддержка разных форматов
+                                // Поле ввода
+                                TextInput {
+                                    id: textInput
+                                    anchors {
+                                        verticalCenter: parent.verticalCenter
+                                        left: parent.left
+                                        leftMargin: 10
+                                        right: parent.right
+                                    }
+                                    text: modelData
+                                    font.pixelSize: 12
+                                    visible: false
+                                    clip: true
+                                    selectByMouse: true
 
-                            onToggled: {
-                                tableModel.updateCell(actualRowIndex, columnIndex, checked ? "1" : "0")
-                            }
-                        }
+                                    onEditingFinished: finishEditing()
+                                    onActiveFocusChanged: if (!activeFocus) finishEditing()
+                                }
 
-                        // Обычный текст для других колонок
-                        Text {
-                            id: textDisplay
-                            anchors {
-                                verticalCenter: parent.verticalCenter
-                                left: parent.left
-                                leftMargin: 10
-                                right: parent.right
-                            }
-                            text: modelData
-                            font.pixelSize: 12
-                            elide: Text.ElideRight
-                            visible: (columnIndex !== 4 && columnIndex !== 5) && !textInput.visible
-                        }
+                                // Правая граница для ячейки
+                                Rectangle {
+                                    anchors.right: parent.right
+                                    width: 1
+                                    height: parent.height
+                                    color: "#e0e0e0"
+                                    visible: columnIndex < rowData.length - 1
+                                }
 
-                        // Поле ввода
-                        TextInput {
-                            id: textInput
-                            anchors {
-                                verticalCenter: parent.verticalCenter
-                                left: parent.left
-                                leftMargin: 10
-                                right: parent.right
-                            }
-                            text: modelData
-                            font.pixelSize: 12
-                            visible: false
-                            clip: true
-                            selectByMouse: true
+                                function startEditing() {
+                                    textInput.text = modelData
+                                    textInput.visible = true
+                                    textInput.forceActiveFocus()
+                                    textInput.selectAll()
+                                }
 
-                            onEditingFinished: finishEditing()
-                            onActiveFocusChanged: if (!activeFocus) finishEditing()
-                        }
-
-                        // Правая граница для ячейки
-                        Rectangle {
-                            anchors.right: parent.right
-                            width: 1
-                            height: parent.height
-                            color: "#e0e0e0"
-                            visible: columnIndex < rowData.length - 1
-                        }
-
-                        function startEditing() {
-                            textInput.text = modelData
-                            textInput.visible = true
-                            textInput.forceActiveFocus()
-                            textInput.selectAll()
-                        }
-
-                        function finishEditing() {
-                            if (textInput.visible) {
-                                tableModel.updateCell(actualRowIndex, columnIndex, textInput.text)
-                                textInput.visible = false
+                                function finishEditing() {
+                                    if (textInput.visible) {
+                                        tableModel.updateCell(actualRowIndex, columnIndex, textInput.text)
+                                        textInput.visible = false
+                                    }
+                                }
                             }
                         }
                     }
+
+                    // Нижняя граница для строки
+                    Rectangle {
+                        anchors.bottom: parent.bottom
+                        width: parent.width
+                        height: 1
+                        color: "#e0e0e0"
+                    }
                 }
+                //        ScrollBar.vertical: ScrollBar {
+                //            policy: ScrollBar.AlwaysOn
+                //            width: 10
+                //        }
+
+
             }
 
-            // Нижняя граница для строки
-            Rectangle {
-                anchors.bottom: parent.bottom
-                width: parent.width
-                height: 1
-                color: "#e0e0e0"
-            }
         }
-        ScrollBar.vertical: ScrollBar {
-            policy: ScrollBar.AlwaysOn
-            width: 10
+        //прокрутка по горизонтали
+        ScrollBar {
+            id: hbar
+            hoverEnabled: true
+            active: hovered || pressed
+            orientation: Qt.Horizontal
+            size: frame.width / content.width
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.bottom: parent.bottom
+            // height: 20
         }
+
     }
 
 }
